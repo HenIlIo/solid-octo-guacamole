@@ -1,56 +1,78 @@
 #include "mytcpserver.h"
+#include "server_functions.h"
 #include <QDebug>
-#include <QCoreApplication>
-#include<QString>
 
-MyTcpServer::~MyTcpServer()
+MyTcpServer* MyTcpServer::getInstance()
 {
-
-    mTcpServer->close();
-    //server_status=0;
+    static MyTcpServer instance;
+    return &instance;
 }
 
-MyTcpServer::MyTcpServer(QObject *parent) : QObject(parent){
+MyTcpServer::MyTcpServer(QObject *parent) : QObject(parent)
+{
     mTcpServer = new QTcpServer(this);
-
     connect(mTcpServer, &QTcpServer::newConnection,
             this, &MyTcpServer::slotNewConnection);
 
     if(!mTcpServer->listen(QHostAddress::Any, 33333)){
         qDebug() << "server is not started";
     } else {
-        //server_status=1;
         qDebug() << "server is started";
     }
 }
 
-void MyTcpServer::slotNewConnection(){
- //   if(server_status==1){
-        mTcpSocket = mTcpServer->nextPendingConnection();
-        mTcpSocket->write("Hello, World!!! I am echo server!\r\n");
-        connect(mTcpSocket, &QTcpSocket::readyRead,this,&MyTcpServer::slotServerRead);
-        connect(mTcpSocket,&QTcpSocket::disconnected,this,&MyTcpServer::slotClientDisconnected);
-   // }
+MyTcpServer::~MyTcpServer()
+{
+    mTcpServer->close();
 }
 
-void MyTcpServer::slotServerRead(){
+void MyTcpServer::slotNewConnection()
+{
+    QTcpSocket *clientSocket = mTcpServer->nextPendingConnection();
+    clientSocket->write("Hello, World!!! I am echo server!\r\n");
+
+    mSessions[clientSocket->socketDescriptor()] = UserSession{"", "", ROLE_USER};
+
+    connect(clientSocket, &QTcpSocket::readyRead,
+            this, &MyTcpServer::slotServerRead);
+    connect(clientSocket, &QTcpSocket::disconnected,
+            this, &MyTcpServer::slotClientDisconnected);
+}
+
+void MyTcpServer::slotServerRead()
+{
+    QTcpSocket *clientSocket = qobject_cast<QTcpSocket*>(sender());
+    if (!clientSocket) return;
+
     QString res = "";
-    while(mTcpSocket->bytesAvailable()>0)
+    while(clientSocket->bytesAvailable() > 0)
     {
-        QByteArray array =mTcpSocket->readAll();
-        qDebug()<<array<<"\n";
-        if(array=="\x01")
+        QByteArray array = clientSocket->readAll();
+        qDebug() << array << "\n";
+        if(array == "\x01")
         {
-            mTcpSocket->write(res.toUtf8());
+            clientSocket->write(res.toUtf8());
             res = "";
         }
         else
             res.append(array);
     }
-    mTcpSocket->write(res.toUtf8());
 
+    QString command = res.trimmed();
+    if (!command.isEmpty()) {
+        UserSession &session = mSessions[clientSocket->socketDescriptor()];
+        QString response = processCommand(command, session);
+        clientSocket->write(response.toUtf8());
+    }
 }
 
-void MyTcpServer::slotClientDisconnected(){
-    mTcpSocket->close();
+void MyTcpServer::slotClientDisconnected()
+{
+    QTcpSocket *clientSocket = qobject_cast<QTcpSocket*>(sender());
+    long idsock = clientSocket->socketDescriptor();
+    //if (clientSocket) {
+        mSessions.remove(idsock);
+        clientSocket->close();
+        clientSocket->deleteLater();
+    //}
 }
