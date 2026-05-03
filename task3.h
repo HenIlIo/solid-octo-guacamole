@@ -3,7 +3,13 @@
 
 #include <QString>
 
-// Task3 - заглушка
-QString task3_execute();
+// text: текст условия (сумма двух чисел).
+// correctAnswer: правильный ответ (сумма a + b).
+struct Task3Problem {
+    QString text;
+    int correctAnswer;
+};
+
+Task3Problem task3_generate(int num);
 
 #endif // TASK3_H

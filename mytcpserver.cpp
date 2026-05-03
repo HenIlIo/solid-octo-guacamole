@@ -31,7 +31,14 @@ void MyTcpServer::slotNewConnection()
     QTcpSocket *clientSocket = mTcpServer->nextPendingConnection();
     clientSocket->write("Hello, World!!! I am echo server!\r\n");
 
-    mSessions[clientSocket->socketDescriptor()] = UserSession{"", "", ROLE_USER};
+    // currentTaskType = 0 (нет активного задания),
+    // currentTaskNum = 0, currentCorrectAnswer = 0
+    mSessions[clientSocket->socketDescriptor()] = UserSession{
+        "", "", ROLE_USER, nullptr,
+        0,  // currentTaskType — нет активного задания
+        0,  // currentTaskNum
+        0   // currentCorrectAnswer
+    };
 
     connect(clientSocket, &QTcpSocket::readyRead,
             this, &MyTcpServer::slotServerRead);

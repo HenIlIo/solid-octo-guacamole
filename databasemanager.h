@@ -53,6 +53,15 @@ public:
     QVector<UserInfo> getAllUsers();
     UserStats getStats();
 
+    // Создать строки со значениями 0 во всех 4 таблицах статистики для нового пользователя
+    bool createStatisticRows(const QString& login);
+    // Обновить ячейку: taskNum (1-4), problemNum (1-40), delta (+1 или -1)
+    bool updateStatistic(const QString& login, int taskNum, int problemNum, int delta);
+    // Получить всю строку статистики (40 значений) для пользователя
+    QVector<int> getStatisticRow(const QString& login, int taskNum);
+    // Удалить строки статистики пользователя (при удалении аккаунта)
+    bool deleteStatisticRows(const QString& login);
+
 private:
     DatabaseManager();
     DatabaseManager(const DatabaseManager&) = delete;
@@ -60,6 +69,8 @@ private:
 
     QSqlDatabase db;
     void initDatabase();
+    // Создание 4 таблиц статистики (StatisticTask1..4)
+    void initStatisticTables();
     void updateLastAuth(const QString& login);
 };
 

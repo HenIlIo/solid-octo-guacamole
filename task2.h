@@ -3,7 +3,14 @@
 
 #include <QString>
 
-// Task2 - заглушка
-QString task2_execute();
+// text: текст условия (сумма двух чисел).
+// correctAnswer: правильный ответ (сумма a + b).
+struct Task2Problem {
+    QString text;
+    int correctAnswer;
+};
+
+// Задание: "Чему равна сумма a + b?" с рандомными числами.
+Task2Problem task2_generate(int num);
 
 #endif // TASK2_H

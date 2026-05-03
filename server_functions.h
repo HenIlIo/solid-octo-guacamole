@@ -12,6 +12,10 @@ struct UserSession {
     QString email;
     UserRole role;
     QTcpSocket* msock;
+
+    int currentTaskType;    // 0 = нет активного задания, 1-4 = тип задания
+    int currentTaskNum;     // 1-40 = номер задания в рамках типа
+    int currentCorrectAnswer;
 };
 
 // Обработка команды
@@ -27,5 +31,12 @@ QString cmd_role(const QStringList& parts, const UserSession& session);
 QString cmd_users(const UserSession& session);
 QString cmd_stats(const UserSession& session);
 QString cmd_help();
+
+// Обработка запроса задания: "task1 5", "task2 3" и т.д.
+QString cmd_task(int taskType, int taskNum, UserSession& session);
+// Обработка ответа пользователя на активное задание
+QString cmd_answer(int userAnswer, UserSession& session);
+// Просмотр личной статистики: "mystats" (все) или "mystats 1" (конкретный Task)
+QString cmd_mystats(const QStringList& parts, const UserSession& session);
 
 #endif // SERVER_FUNCTIONS_H
